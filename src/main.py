@@ -3,7 +3,7 @@ import asyncio
 import sys
 import src.handlers as handlers
 
-from aiogram import Router, types, Bot, Dispatcher
+from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 
 from src.data.config import BOT_TOKEN
@@ -14,9 +14,9 @@ def setup_handlers(dp: Dispatcher) -> None:
 
 
 async def main():
-    # dp.include_router()
     bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
     dp = Dispatcher()
+
     setup_handlers(dp)
     await dp.start_polling(bot)
 
