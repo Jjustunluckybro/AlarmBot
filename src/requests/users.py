@@ -1,35 +1,32 @@
 from pydantic import ValidationError
 
 from src.models.UserModel import UserModel
-import aiohttp
 
 from src.data.config import BACKEND_HOST
-from src.utils import statuses
-from src.utils.exception import RequestException
+from src.requests.RequestHandler import IRequestHandler, RequestHandler, ResponseModel
+from src.data import statuses
+from src.utils.exception import RequestException, ResponseValidationException
 
 from logging import getLogger
 
-logger = getLogger("requests")
+module = "users"
+logger = getLogger(f"app.requests.{module}")
 
 
 async def get_user(user_id) -> UserModel:
-    url = f"{BACKEND_HOST}/users/get_user/{user_id}"
-    logger.info(f"GET/ {url}")
+    url = f"users/get_user/{user_id}"
+    request_handler: IRequestHandler = RequestHandler(BACKEND_HOST, module)
+    r: ResponseModel = await request_handler.get(url)
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as r:
-
-            details = await r.text()
-            if r.status == statuses.SUCCESS_200:
-                logger.info(f"GET Success {url}")
-                try:
-                    return UserModel.model_validate_json(details)
-                except ValidationError as err:
-                    logger.error(f"Validation error, body: {details}")
-                    raise err
-            else:
-                logger.error(f"GET Failed {url} - status: {r.status}. details: {details}")
-                raise RequestException(r.status, details)
+    details = r.body
+    if r.status == statuses.SUCCESS_200:
+        try:
+            return UserModel.model_validate_json(details)
+        except ValidationError as err:
+            raise ResponseValidationException(r.status, "GET", url=url, status=r.status, body=details)
+    else:
+        logger.error(f"GET/ {url} - status: {r.status}. details: {details}")
+        raise RequestException(r.status, details)
 
 
 async def write_new_user(user_id: str, username: str) -> None:
@@ -37,19 +34,17 @@ async def write_new_user(user_id: str, username: str) -> None:
         telegram_id=user_id,
         user_name=username
     )
-    url = f"{BACKEND_HOST}/users/create_user"
-    logger.info(f"POST/ {url}")
+    url = f"users/create_user"
+    request_handler: IRequestHandler = RequestHandler(BACKEND_HOST, module)
+    r: ResponseModel = await request_handler.post(url, user.model_dump())
 
-    async with aiohttp.ClientSession() as session:
-        async with session.post(url, json=user.model_dump()) as r:
-
-            details = await r.text()
-            if r.status == statuses.CONFLICT_409:
-                logger.info(f"POST Success {url} - user already exist")
-                return
-            elif r.status == statuses.CREATED_201:
-                logger.info(f"POST Success {url} - user created")
-                return
-            else:
-                logger.error(f"POST Failed {url} - status: {r.status}. details: {details}")
-                raise RequestException(r.status, details)
+    details = r.body
+    if r.status == statuses.CONFLICT_409:
+        logger.info(f"POST/ {url} - user already exist")
+        return
+    elif r.status == statuses.CREATED_201:
+        logger.info(f"POST/ {url} - user created")
+        return
+    else:
+        logger.error(f"POST/ {url} - status: {r.status}. details: {details}")
+        raise RequestException(r.status, details)

@@ -8,9 +8,13 @@ from aiogram.enums import ParseMode
 
 from src.data.config import BOT_TOKEN
 
+logger = logging.getLogger('app.main')
+
 
 def setup_handlers(dp: Dispatcher) -> None:
-    dp.include_routers(*handlers.prepare_routers())
+    routers = handlers.prepare_routers()
+    logger.info(f"prepare routers: {[router.name for router in routers]}")
+    dp.include_routers(*routers)
 
 
 async def main():

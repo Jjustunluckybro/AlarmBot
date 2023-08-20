@@ -1,3 +1,4 @@
-from . import start
-from . import menu
-from . import help
+from .start import start
+from .menu import menu
+from .help import help
+from .router import prepare_user_commands_router

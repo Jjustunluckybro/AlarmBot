@@ -2,7 +2,6 @@ from aiogram import types
 from pydantic import ValidationError
 
 from src.requests.users import write_new_user
-from src.utils import statuses
 from src.utils.exception import RequestException
 
 

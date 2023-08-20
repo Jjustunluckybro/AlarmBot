@@ -1,19 +1,23 @@
-from typing import List
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from aiogram.types import InlineKeyboardButton
-from aiogram.utils.keyboard import InlineKeyboardBuilder, KeyboardBuilder
+from src.models.ThemeModel import ThemeModel
+
+from src.data import callback_answers
 
 
-def create_keyboard() -> InlineKeyboardBuilder:
+async def create_user_themes_keyboard(user_themes: list[ThemeModel]) -> InlineKeyboardBuilder:
+
     builder = InlineKeyboardBuilder()
 
-    user_themes = ["Theme 1", "Theme 2", "Theme 3", "Theme 4", "Theme 5"]
+    if not user_themes:
+        builder.button(text="Создать новую тему", callback_data=callback_answers.ADD_THEME)
+        return builder
 
     for theme in user_themes:
-        builder.button(text=theme, callback_data=f"open_{theme}")
+        builder.button(text=theme.name, callback_data=callback_answers.open_theme(theme.id))
 
-    builder.button(text="Создать новую тему", callback_data="add_theme")
-    builder.button(text="Удалить тему", callback_data="del_theme")
+    builder.button(text="Создать новую тему", callback_data=callback_answers.ADD_THEME)
+    builder.button(text="Удалить тему", callback_data=callback_answers.DELETE_THEME)
 
     builder.adjust(1, True)
 
